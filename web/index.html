@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Queen's Domain Map</title>
+<meta name="description" content="Interactive 3D map of Queen's Domain: items, secrets, enemies, NPCs, save points and more.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css?v=44eef1ea2a">
+<script type="module" src="app.js?v=44eef1ea2a"></script>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <header class="side-head">
+      <h1>Queen's Domain <span>map</span></h1>
+      <button id="closeSide" class="icon-btn only-mobile" aria-label="Close panel">&times;</button>
+    </header>
+    <div class="search-wrap">
+      <input id="search" type="search" placeholder="Search items, enemies, NPCs, places..." autocomplete="off" spellcheck="false">
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="filters" class="active">Filters</button>
+      <button role="tab" data-tab="areas">Areas</button>
+      <button role="tab" data-tab="list">List <span id="listCount" class="pill">0</span></button>
+    </nav>
+    <section id="tab-filters" class="tab-body active">
+      <div class="filter-tools">
+        <button id="allOn" class="small-btn">All</button>
+        <button id="allOff" class="small-btn">None</button>
+        <button id="defaults" class="small-btn">Defaults</button>
+        <label class="check"><input type="checkbox" id="onlyHidden"> Only hidden or out-of-view pickups</label>
+      </div>
+      <div id="filters"></div>
+    </section>
+    <section id="tab-areas" class="tab-body">
+      <p class="hint">So nothing is spoiled up front, areas appear as the camera gets within about 100 m of them, and stay. <b>Show all</b> loads every area now.</p>
+      <p class="hint">Areas are stacked: many dungeons sit under the island. Click an area name to fly there with everything above it cut away. <b>Reset view</b> clears the cut. Checkboxes load or hide an area.</p>
+      <div class="filter-tools"><button id="showAllAreas" class="small-btn">Show all</button></div>
+      <div id="areas"></div>
+    </section>
+    <section id="tab-list" class="tab-body">
+      <p class="hint" id="listHint">Markers matching the current filters and search, nearest to the camera first.</p>
+      <ul id="list"></ul>
+    </section>
+    <footer class="side-foot">
+      <span id="status">Loading...</span>
+    </footer>
+  </aside>
+
+  <main id="view">
+    <canvas id="c"></canvas>
+    <div id="toolbar">
+      <button id="openSide" class="icon-btn only-mobile" aria-label="Open panel">&#9776;</button>
+      <div class="tool">
+        <label for="slice">Cut away above</label>
+        <input id="slice" type="range" min="0" max="1000" value="1000">
+        <span id="sliceVal">off</span>
+      </div>
+      <label class="check tool"><input type="checkbox" id="xray" checked> Markers through walls</label>
+      <label class="check tool"><input type="checkbox" id="textures" checked> Textures</label>
+      <div class="tool">
+        <label for="speed">Fly speed</label>
+        <input id="speed" type="range" min="0" max="100" value="38">
+        <span id="speedVal" class="val">15 m/s</span>
+      </div>
+      <div class="tool">
+        <label for="msize">Marker size</label>
+        <input id="msize" type="range" min="10" max="40" value="22">
+      </div>
+      <button id="resetView" class="small-btn">Reset view</button>
+      <button id="helpBtn" class="small-btn" aria-label="Help">?</button>
+    </div>
+    <div id="tooltip" hidden></div>
+    <div id="loading" class="loading"><div class="bar"><div id="loadBar"></div></div><span id="loadText">Loading map data...</span></div>
+    <aside id="info" hidden>
+      <button id="closeInfo" class="icon-btn" aria-label="Close">&times;</button>
+      <div id="infoBody"></div>
+    </aside>
+    <div id="help" hidden>
+      <div class="help-card">
+        <button id="closeHelp" class="icon-btn" aria-label="Close">&times;</button>
+        <h2>Controls</h2>
+        <ul>
+          <li><b>Left drag</b>: orbit around the point you're looking at. <b>Wheel</b>: zoom toward the cursor.</li>
+          <li><b>Right drag</b>: look around from where the camera is.</li>
+          <li><b>Middle drag</b> or <b>Shift+drag</b>: pan.</li>
+          <li><b>W A S D</b> fly in the direction you're looking, <b>Q E</b> straight down and up. The <b>Fly speed</b> slider sets the speed; hold <b>Shift</b> or <b>Space</b> for 4× faster (in Firefox, use Space while right-dragging, as Shift + right-click opens the browser menu). While a movement key is held, left drag also looks around, so you can steer with one hand on the keys.</li>
+          <li><b>Double-click</b> the world to orbit around that spot.</li>
+          <li><b>Click a marker</b> for details. The URL updates so you can share it.</li>
+          <li><b>Cut away above</b> slices off everything above a height, which helps with dungeons, towers and caves.</li>
+          <li>Dimmed markers are behind walls or underground. Turn off <b>Markers through walls</b> to hide them.</li>
+          <li>Turn off <b>Textures</b> for flat colors, which are lighter on slower computers.</li>
+          <li>With <b>Enemies</b>, <b>Bosses</b> or <b>Mimics</b> switched on in Filters, a model of each enemy stands at its spawn point in its idle pose. Enemy, NPC, skeleton and wildlife models show within 150 m of the camera, when not hidden behind walls.</li>
+          <li>Areas load as the camera gets within about 100 m of them (areas below you count as further away), so the first view doesn't give away the rest of the game. Use <b>Show all</b> in the Areas tab to load everything at once. The endgame areas start hidden; tick them in the Areas list to see them.</li>
+        </ul>
+        <h2>Pickup labels</h2>
+        <ul>
+          <li><b>Hidden</b>: tucked away, often behind a secret wall or in a dark corner.</li>
+          <li><b>Out of view</b>: off the obvious path, look around corners and ledges.</li>
+          <li><b>Accessible later</b>: needs a key, ability or route you get later.</li>
+        </ul>
+        <p class="hint">Data is extracted from the game files (build 13540). Positions are exact; some pickups only appear after an event.</p>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

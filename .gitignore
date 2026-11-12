@@ -1,0 +1,12 @@
+# build output
+bin/
+obj/
+out/
+dist/
+tools/
+__pycache__/
+
+# no binaries or extracted game content in the repo
+*.dll
+*.glb
+*.pak
