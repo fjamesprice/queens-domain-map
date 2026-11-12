@@ -4,7 +4,14 @@ An interactive 3D map of [Queen's Domain](https://store.steampowered.com/app/179
 
 This repository has no game content in it. The build script reads the game's files from your Steam install (read-only) and writes the map to a folder on your machine, which you then open in a browser. This is a fan project, not affiliated with or endorsed by the game's developers.
 
-## Building it
+## Download (Windows)
+
+1. Download the zip from the latest release on the [Releases page](../../releases/latest) and unzip it anywhere.
+2. Double-click `Open map.cmd`.
+
+Nothing else needs installing; the zip brings its own copies of the tools. The first run builds the map from your game files, which takes 10 to 20 minutes and about 1 GB of free space while it runs, then opens the map in your browser. Later runs open it straight away, and rebuild first if the game has been updated. `README.txt` in the zip has the details.
+
+## Building from source
 
 You need:
 
@@ -16,12 +23,12 @@ You need:
 Then clone this repository and, from its folder, run:
 
 ```
-python build.py --serve
+python build.py --serve --open
 ```
 
-and open http://localhost:8000/. The map has to be served over HTTP; opening `index.html` straight from disk won't load the data.
+The map is served at http://localhost:8000/. It has to be served over HTTP; opening `index.html` straight from disk won't load the data.
 
-The build takes about 10 minutes. It finds the game through Steam's library list; if it can't, pass the install folder (the one with `QueensDomain.exe`):
+The build takes 10 to 20 minutes. It finds the game through Steam's library list; if it can't, pass the install folder (the one with `QueensDomain.exe`):
 
 ```
 python build.py --game "D:\SteamLibrary\steamapps\common\QueensDomain"
@@ -33,12 +40,19 @@ Other options:
 |---|---|
 | `--out <dir>` | Write the map somewhere other than `./dist` (for example a web server's folder). |
 | `--serve-only` | Serve an already built map without rebuilding. |
-| `--port <n>` | Port for `--serve` and `--serve-only` (default 8000). |
+| `--auto` | Serve the existing map if it was built from the installed game version, otherwise rebuild, then serve. This is what `Open map.cmd` in the release runs. |
+| `--open` | Open the map in the default browser once it's served. |
+| `--port <n>` | Port to serve on (default 8000; the next free one if that's taken). |
 | `--skip-extract` | Reuse the extracted files in `./out` and redo only compression and web data. Useful after editing `web/` or `build_data.py`. |
+| `--clean` | Delete `./out` after a successful build. |
 
 Disk use: about 450 MB of intermediate files in `./out` and 130 MB for the finished map. After a game update, run `build.py` again.
 
 Only the Windows build of the game has been tested. Extractor logs go to `out/logs/`.
+
+### Making a release
+
+`python make_release.py <version>` writes `release/queens-domain-map-<version>-windows.zip`. It publishes the extractor as a self-contained `Extractor.exe`, downloads the native gltfpack and the embeddable Python (checked against pinned SHA-256 hashes), and adds the launchers, `README.txt` and `THIRD-PARTY-NOTICES.txt`. Upload the zip with `gh release create v<version> release/queens-domain-map-<version>-windows.zip`.
 
 ## How it works
 

@@ -10,3 +10,4 @@ __pycache__/
 *.dll
 *.glb
 *.pak
+release/
